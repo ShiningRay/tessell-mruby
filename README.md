@@ -30,6 +30,7 @@ Tessell 的可选 **mruby 脚本 / 插件层**。实验性项目，当前处于 
 
 - [`docs/plan.md`](docs/plan.md)：目标、非目标、三阶段计划、六项门禁、工时、风险登记、验收标准。
 - [`docs/design.md`](docs/design.md)：依赖方向、线程与 GC 模型、值边界、句柄表、事件流、错误隔离、性能预算。
+- [`docs/demo.md`](docs/demo.md)：P0 验收用 hero demo「Log Explorer」——热重载、错误隔离、性能 HUD 与 G1–G6 的对应。
 - [`examples/counter/counter.rb`](examples/counter/counter.rb)：目标形态的脚本示例（当前不可运行，仅冻结 API 方向）。
 
 ## 明确不做

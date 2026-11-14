@@ -60,7 +60,7 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 
 ## 5. 阶段计划
 
-### P0：Spike（2 周，约 9 人日）
+### P0：Spike（2 周，约 9.5 人日）
 
 | 编号 | 任务 | 交付物 | 人日 |
 | --- | --- | --- | --- |
@@ -69,10 +69,10 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 | T0.3 | Handles | `Int32`（id + generation）句柄表；`resolve` / `create` / `release`；失效返回 nil | 0.5 |
 | T0.4 | Bridge（声明侧） | `Tessell.*` host 方法写 `Decl` 栈；`text/label/button/row/column`；覆盖 a11y 字段 | 2.0 |
 | T0.5 | 事件与回调 | `on_click` 等回调注册（Ref 持 Proc）；`begin/end` 降级 + block 版本 | 2.0 |
-| T0.6 | Demo + 门禁 | counter demo；G1–G6 自动化脚本；性能/内存基线 | 1.5 |
+| T0.6 | Demo + 门禁 | `examples/log-explorer/`（规格见 [demo.md](demo.md)）；G1–G6 自动化脚本；性能/内存基线 | 2.0 |
 | T0.7 | 文档与结论 | Go/No-Go 报告、API 冻结草案、上游 issue 清单 | 1.0 |
 
-**P0 硬性产出**：`TessellMRuby.open("ui.rb") { ... }` 能跑通 counter；脚本改一行后热重载生效；脚本 `raise` 只污染一个错误条。
+**P0 硬性产出**：`TessellMRuby.open("ui.rb") { ... }` 能跑通 Log Explorer（counter 降级为 smoke 用例）；脚本改一行后热重载生效；脚本 `raise` 只污染一个错误条；`--demo-gates` 可无人值守输出 G1–G6 的 JSON。
 
 ### P1：独立 shard（2 周，约 5–8 人日）
 
@@ -130,7 +130,7 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 
 ## 10. 交付物
 
-- P0：可运行 demo、G1–G6 报告、API 冻结草案、Go/No-Go 结论。
+- P0：Log Explorer demo（规格见 [`demo.md`](demo.md)）、G1–G6 报告、API 冻结草案、Go/No-Go 结论。
 - P1：`tessell_mruby` 0.1.0、接入文档、CI 工作流、兼容矩阵。
 - 全程：上游 mrb.cr 的 issue/PR（不 fork）。
 
