@@ -1,0 +1,22 @@
+name: tessell_mruby
+version: 0.0.1
+description: Optional mruby scripting layer for Tessell (experimental, phase 0).
+
+authors:
+  - ShiningRay
+
+crystal: ">= 1.21.0"
+
+license: MIT
+
+dependencies:
+  tessell:
+    github: ShiningRay/tessell
+    version: "~> 0.1"
+  mrb:
+    github: ShiningRay/mrb.cr
+    version: "~> 0.1"
+
+targets:
+  tessell_mruby:
+    main: src/tessell_mruby.cr
