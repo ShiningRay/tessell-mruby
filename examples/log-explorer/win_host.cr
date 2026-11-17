@@ -223,7 +223,7 @@ module LogExplorer
     exit 1
   end
 
-  def self.run_window(script : String, frame_limit : Int32 = 0, screenshot : String = "") : Int32
+  def self.run_window(script : String, frame_limit : Int32 = 0, screenshot : String = "", demo_capture : Bool = false) : Int32
     result_ch = Channel(Int32).new
 
     iso_ctx = Fiber::ExecutionContext::Isolated.new("tessell-log-explorer") do
@@ -281,7 +281,7 @@ module LogExplorer
         fail("wglCreateContext") if hglrc.null?
         fail("wglMakeCurrent") if LexWGL.wglMakeCurrent(hdc, hglrc) == 0
 
-        code = window_loop(script, hdc, frame_limit, screenshot)
+        code = window_loop(script, hdc, frame_limit, screenshot, demo_capture)
         STDERR.puts code unless code.empty?
 
         LexWGL.wglMakeCurrent(Pointer(Void).null, Pointer(Void).null)
@@ -300,7 +300,27 @@ module LogExplorer
     result_ch.receive
   end
 
-  private def self.window_loop(script : String, hdc : Void*, frame_limit : Int32, screenshot : String) : String
+  # 按标签找按钮（Text 声明的 parent = 按钮容器），经 Router 命中注入点击。
+  private def self.click_button(app : HostApp, label : String) : Nil
+    target = nil
+    app.last_decls.each do |d|
+      if d.kind == UI::DeclKind::Text && d.text.starts_with?(label)
+        target = d
+        break
+      end
+    end
+    return unless target
+    node = app.pool.map[target.parent]?
+    return unless node
+    b = node.bounds
+    cx = b.origin.x + b.size.width / 2
+    cy = b.origin.y + b.size.height / 2
+    ts = (Time.monotonic.total_milliseconds % 1_000_000).to_i64
+    app.handle_event(Input::Event.pointer_down(cx, cy, 0, Input::Modifiers.none, ts))
+    app.handle_event(Input::Event.pointer_up(cx, cy, 0, Input::Modifiers.none, ts + 8))
+  end
+
+  private def self.window_loop(script : String, hdc : Void*, frame_limit : Int32, screenshot : String, demo_capture : Bool) : String
     return "ft_unavailable: #{Text::FtMeasurer.unavailable_reason}" unless Text::FtMeasurer.available?
 
     STDERR.puts "lex: ft available" if DEBUG_RENDER
@@ -367,6 +387,24 @@ module LogExplorer
       frames += 1
       render(app, backend, renderer, atlas, placement, theme)
       LexGdi32.SwapBuffers(hdc)
+      if demo_capture
+        case frames
+        when 30
+          capture_bmp("artifacts/demo_1_initial.bmp", WIDTH, HEIGHT)
+        when 40
+          click_button(app, "Harm")   # G1 现场注入：脚本 raise → 错误条
+        when 70
+          capture_bmp("artifacts/demo_2_error.bmp", WIDTH, HEIGHT)
+        when 80
+          # G2 现场热重载：改按钮文案 → reload
+          File.write(script, File.read(script).gsub("Log Explorer", "Log Explorer [reloaded]"))
+          app.reload_script
+        when 110
+          capture_bmp("artifacts/demo_3_reload.bmp", WIDTH, HEIGHT)
+        when 120
+          LexState.quit_requested = true
+        end
+      end
     end
     unless screenshot.empty?
       capture_bmp(screenshot, WIDTH, HEIGHT)

@@ -12,7 +12,7 @@ Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全�
 | spec | ✅ 26 examples 全绿（`crystal spec`） |
 | 门禁自动化 | ✅ `--demo-gates --json` 无人值守，JSON 进 CI 工件 |
 | CI（windows-latest + MSYS2 UCRT64） | ✅ 构建 + spec + 门禁 |
-| P1 独立 shard 发布 | ⏳ 进行中（API 冻结候选见 [api-freeze](docs/api-freeze.md)） |
+| P1 shard 发布 | ✅ `0.1.0`（tag `v0.1.0`；API 冻结候选见 [api-freeze](docs/api-freeze.md)） |
 
 ## 为什么单独一个仓库
 
@@ -35,6 +35,9 @@ bin\log_explorer.exe --demo-gates --json
 # 4) headless 冒烟 / 测试
 bin\log_explorer.exe --frames=60
 bin\log_explorer.exe --window=25 --screenshot=shot.bmp   # 自动退出 + 抓帧
+
+# 5) 三段演示证据（热重载 / 错误注入 / HUD → artifacts/demo_*.png）
+bin\log_explorer.exe --window --demo-capture examples\log-explorer\ui.rb
 ```
 
 ## 实测数字（release 构建，本机 Win11 / UCRT64 / Crystal 1.22.1 / mruby 4.0.0）

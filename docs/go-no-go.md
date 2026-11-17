@@ -18,6 +18,17 @@
 
 脚本帧的分配与耗时单列（HUD 与 G4 口径），未并入 tessell 零分配叙事（design §10 口径一致）。
 
+### 演示证据（demo.md §10 三段）
+
+`bin/log_explorer.exe --window --demo-capture examples/log-explorer/ui.rb` 自动产出
+`artifacts/demo_{1_initial,2_error,3_reload}.png`（窗口渲染帧抓取）：
+
+1. **initial**：脚本声明的完整 UI（toolbar/KPI/30 行日志/HUD）。
+2. **error**：点击 Harm 后 —— 底部红色错误条 `script error: examples/log-explorer/ui.rb:35:
+   RuntimeError: injected failure from Harm button`，上方 UI 原样存活（G1）。
+3. **reload**：改脚本标题文案后热重载 —— 标题变 `[reloaded]`、HUD `reloads 1`、错误条清除、
+   节点身份不换（G2）。60 秒 GIF 仍留作现场录制（脚本化三段截图即静态证据）。
+
 ## 2. P0 硬性产出对账（plan §5）
 
 | 产出 | 状态 |

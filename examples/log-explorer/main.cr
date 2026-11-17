@@ -40,13 +40,15 @@ module LogExplorer
     frame_limit = 0
     frame_limit = 0
     screenshot = ""
+    demo_capture = false
     if arg = args.find { |a| a.starts_with?("--window") }
       frame_limit = arg.includes?("=") ? arg.split("=", 2)[1].to_i : 0
     end
     if arg = args.find { |a| a.starts_with?("--screenshot=") }
       screenshot = arg.split("=", 2)[1]
     end
-    run_window(script, frame_limit, screenshot)
+    demo_capture = args.includes?("--demo-capture")
+    run_window(script, frame_limit, screenshot, demo_capture)
   end
 end
 

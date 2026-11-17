@@ -1,6 +1,6 @@
 name: tessell_mruby
-version: 0.0.1
-description: Optional mruby scripting layer for Tessell (experimental, phase 0).
+version: 0.1.0
+description: Optional mruby scripting layer for Tessell (P0 gates passed, shard preview).
 
 authors:
   - ShiningRay
