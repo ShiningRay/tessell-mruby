@@ -23,12 +23,11 @@ jobs:
         with:
           msystem: UCRT64
           update: true
-          # 2026 msys2 命名：crystal 为 mingw-w64-crystal（ucrt64 仓库），
-          # 工具链前缀是 mingw-w64-ucrt-x86_64-*。
+          # 2026 msys2 命名：环境前缀统一为 mingw-w64-ucrt-x86_64-*。
           install: >-
             git
             make
-            mingw-w64-crystal
+            mingw-w64-ucrt-x86_64-crystal
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-ruby
 
