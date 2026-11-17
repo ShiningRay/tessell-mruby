@@ -177,8 +177,9 @@ module LogExplorer
       target = @router.handle(ev, @root)
       case ev.kind
       when .pointer_up?
-        if target && (key = key_for_node(target))
-          dispatch_click(key)
+        # 点击目标可能是按钮容器内的文本子节点：沿祖先链找最近回调。
+        if target
+          dispatch_click_up(target)
         end
       when .wheel?
         dy = (ev.wheel_dy * LogStore::ROW_STEP_PX).to_i32
@@ -199,17 +200,29 @@ module LogExplorer
       nil
     end
 
-    private def dispatch_click(key : Tessell::UI::UiKey) : Nil
-      @click_count += 1
-      if rt = @runtime
-        d = rt.dispatch_click(key)
-        rt.request_frame # 事件帧强制重建（回调可能只改内部状态）
-        @last_error_for_bar = d.error if d.error
-        return
-      end
-      if h = @builtin.handlers[key]?
-        h.call
-        request_rebuild
+    # 沿祖先链找最近回调（脚本回调 → 内置回调），命中即停。
+    private def dispatch_click_up(node : Node) : Nil
+      n = node
+      while n
+        key = key_for_node(n)
+        if key
+          if rt = @runtime
+            d = rt.dispatch_click(key)
+            if d.dispatched
+              @click_count += 1
+              rt.request_frame # 事件帧强制重建（回调可能只改内部状态）
+              @last_error_for_bar = d.error if d.error
+              return
+            end
+          end
+          if h = @builtin.handlers[key]?
+            h.call
+            @click_count += 1
+            request_rebuild
+            return
+          end
+        end
+        n = n.parent
       end
     end
 

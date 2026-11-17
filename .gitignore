@@ -12,3 +12,4 @@
 *.dll
 *.pdb
 /.gate_scratch/
+/artifacts/

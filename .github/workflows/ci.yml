@@ -1,0 +1,48 @@
+# CI 冒烟（plan T0.1 / design §12）：windows-latest + MSYS2 UCRT64。
+#
+# 构建（mruby 产物 + demo 双 exe）→ spec → G1-G6 门禁 JSON 落工件。
+# 全部 --release：debug 链接在 binutils 2.47 快照上有 ld 崩溃问题
+# （docs/go-no-go.md §风险），release 链接稳定且是交付口径。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  windows-ucrt64:
+    runs-on: windows-latest
+    defaults:
+      run:
+        shell: msys2 {0}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: msys2/setup-msys2@v2
+        with:
+          msystem: UCRT64
+          update: false
+          install: >-
+            git
+            make
+            mingw-w64-ucrt64-crystal
+            mingw-w64-ucrt64-gcc
+            mingw-w64-ucrt64-ruby
+
+      - name: Build + spec + gates
+        run: powershell -ExecutionPolicy Bypass -File scripts/build.ps1
+
+      - name: Upload gates JSON
+        uses: actions/upload-artifact@v4
+        with:
+          name: gates-json
+          path: artifacts/gates.json
+
+      - name: Upload demo exes
+        uses: actions/upload-artifact@v4
+        with:
+          name: demo-exes
+          path: |
+            bin/log_explorer.exe
+            bin/log_explorer_builtin.exe
