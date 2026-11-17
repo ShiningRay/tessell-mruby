@@ -1,6 +1,6 @@
 # tessell-mruby
 
-Tessell 的可选 **mruby 脚本 / 插件层**。实验性项目，当前处于 **阶段 0（计划冻结）**：仓库里是方案、骨架与验收口径，可用实现按 [`docs/plan.md`](docs/plan.md) 的 P0 任务逐项落地。
+Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全部六项门禁（结论见 [`docs/go-no-go.md`](docs/go-no-go.md)），当前进入 P1（独立 shard 化）。
 
 > 定位不是"用 Ruby 写 Tessell 应用"，而是给已有 Tessell 应用增加**可选的**脚本、插件、热重载能力。主应用模型仍然是有静态类型与零分配承诺的 Crystal。
 
@@ -8,10 +8,11 @@ Tessell 的可选 **mruby 脚本 / 插件层**。实验性项目，当前处于 
 
 | 项目 | 状态 |
 | --- | --- |
-| 计划 / 方案 | ✅ 冻结（`docs/plan.md`、`docs/design.md`） |
-| 仓库骨架 | ✅ 仅版本占位，无可用 API |
-| P0 spike（counter demo + 六项门禁） | ⏳ 计划中，估 8–10 人日 |
-| P1 独立 shard 发布 | ⏳ 未开始 |
+| P0 spike（Runtime/Handles/Bridge/事件 + Log Explorer demo + G1–G6） | ✅ 全部 PASS（[报告](docs/go-no-go.md)） |
+| spec | ✅ 26 examples 全绿（`crystal spec`） |
+| 门禁自动化 | ✅ `--demo-gates --json` 无人值守，JSON 进 CI 工件 |
+| CI（windows-latest + MSYS2 UCRT64） | ✅ 构建 + spec + 门禁 |
+| P1 独立 shard 发布 | ⏳ 进行中（API 冻结候选见 [api-freeze](docs/api-freeze.md)） |
 
 ## 为什么单独一个仓库
 
@@ -19,19 +20,48 @@ Tessell 的可选 **mruby 脚本 / 插件层**。实验性项目，当前处于 
 - `mrb.cr` 是通用 mruby 绑定，不应该知道窗口、`Decl`、`UiKey` 这些 GUI 概念。
 - 桥接层同时依赖两者，只能住在第三个仓库：`tessell ← tessell_mruby → mrb → libmruby.a`。
 
+## 快速开始
+
+```powershell
+# 1) 依赖与 mruby 产物（同级有 ../mrb.cr checkout 则直接拷贝，否则在 shard 内 make）
+powershell -ExecutionPolicy Bypass -File scripts/build.ps1
+
+# 2) 跑 demo（窗口模式，脚本可选；无脚本/脚本失败自动回退内置 UI）
+bin\log_explorer.exe examples\log-explorer\ui.rb
+
+# 3) 无人值守门禁（G1–G6，JSON 输出，exit code = 全过 ? 0 : 1）
+bin\log_explorer.exe --demo-gates --json
+
+# 4) headless 冒烟 / 测试
+bin\log_explorer.exe --frames=60
+bin\log_explorer.exe --window=25 --screenshot=shot.bmp   # 自动退出 + 抓帧
+```
+
+## 实测数字（release 构建，本机 Win11 / UCRT64 / Crystal 1.22.1 / mruby 4.0.0）
+
+| 指标 | 值 | 目标 |
+| --- | --- | --- |
+| G1 异常隔离 | 4 类故障全部隔离，错误含 file:line，UI 存活 | 不崩进程 |
+| G2 热重载 | 50 次连续 reload p99 **1.18ms**，UiKey 稳定，live 增长 0 | ≤ 500ms |
+| G3 空闲零分配 | 1000 空闲帧 delta_work = **0** | < 1000 / ≤ 256 |
+| G4 事件延迟 | 1000 次真实点击 e2e p99 **2.57ms**；回调 p99 **0.014ms** | < 1 帧 / < 1ms |
+| G5 包体/启动 | exe 增量 **1.19MB**；启动增量 **~3.6ms** | ≤ 2.5MB / ≤ 50ms |
+| G6 稳定性 | 200 点击 + 50 重载，live 233→233，Ref 差值 0 | 无泄漏 |
+
 ## 依赖与前置条件
 
-- [Tessell](https://github.com/ShiningRay/tessell)：Crystal ≥ 1.21，Windows 已验证（MSYS2 UCRT64）。
-- [mrb.cr](https://github.com/ShiningRay/mrb.cr)：固定 commit 消费，**不 fork**。
-- 上游缺口跟踪：[ShiningRay/mrb.cr#1](https://github.com/ShiningRay/mrb.cr/issues/1)（Windows 链接名、lockfile、bison/gperf 文档，以及 block / `Proc` / `yield` / `funcall` 绑定）。
-- 首次使用需在 `mrb.cr` 目录执行其 `make`，产出 `lib/libmruby.a` 与 shim；Windows 下的 mingw 构建路径已实测通过（见 issue #1）。
+- [Tessell](https://github.com/ShiningRay/tessell) 0.4.1：Crystal ≥ 1.21，Windows 已验证（MSYS2 UCRT64）。
+- [mrb.cr](https://github.com/ShiningRay/mrb.cr) 0.2.1：**不 fork**，固定版本消费；上游缺口跟踪 [issues #2–#5](https://github.com/ShiningRay/mrb.cr/issues)。
+- 首次构建需要 mruby 静态库：`scripts/build.ps1` 自动处理（优先拷贝同级 `../mrb.cr/lib` 产物，否则在 shard 内 `make`）。
+- 版本矩阵：Crystal 1.22.1 × mruby 4.0.0 × mrb.cr 0.2.1 × tessell 0.4.1（升级需全门禁重跑）。
 
 ## 文档
 
-- [`docs/plan.md`](docs/plan.md)：目标、非目标、三阶段计划、六项门禁、工时、风险登记、验收标准。
+- [`docs/plan.md`](docs/plan.md)：目标、非目标、三阶段计划、六项门禁、工时、风险登记。
 - [`docs/design.md`](docs/design.md)：依赖方向、线程与 GC 模型、值边界、句柄表、事件流、错误隔离、性能预算。
-- [`docs/demo.md`](docs/demo.md)：P0 验收用 hero demo「Log Explorer」——热重载、错误隔离、性能 HUD 与 G1–G6 的对应。
-- [`examples/counter/counter.rb`](examples/counter/counter.rb)：目标形态的脚本示例（当前不可运行，仅冻结 API 方向）。
+- [`docs/demo.md`](docs/demo.md)：P0 验收用 hero demo「Log Explorer」规格。
+- [`docs/go-no-go.md`](docs/go-no-go.md)：**P0 结论报告**——门禁实测数字、实现要点与偏差、上游缺口、P1 建议。
+- [`docs/api-freeze.md`](docs/api-freeze.md)：API 冻结候选（Crystal 侧 / 脚本 DSL / 宿主 glue 惯例 / Config）。
 
 ## 明确不做
 
