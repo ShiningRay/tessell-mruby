@@ -43,7 +43,8 @@ module TessellMRuby
     # ---- key 派生 ----
 
     # FNV-1a 64：同一脚本字符串跨帧得到同一 local（跨 UiKey 稳定）。
-    private def fnv64(s : String) : UInt64
+    # 公开为类方法：fallback UI（builtin_ui）用同一派生保证节点身份一致。
+    def self.fnv64(s : String) : UInt64
       h = 0xcbf29ce484222325_u64
       s.each_byte do |b|
         h = h ^ b
@@ -62,7 +63,7 @@ module TessellMRuby
       end
       cached = bucket[script_key]?
       return cached if cached
-      key = current_parent.child(fnv64(script_key))
+      key = current_parent.child(Decls.fnv64(script_key))
       bucket[script_key] = key
       key
     end

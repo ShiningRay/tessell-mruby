@@ -20,3 +20,7 @@ dependencies:
 targets:
   tessell_mruby:
     main: src/tessell_mruby.cr
+  log_explorer:
+    main: examples/log-explorer/main.cr
+  log_explorer_builtin:
+    main: examples/log-explorer/main_builtin.cr

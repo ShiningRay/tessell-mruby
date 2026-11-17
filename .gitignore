@@ -11,3 +11,4 @@
 *.lib
 *.dll
 *.pdb
+/.gate_scratch/
