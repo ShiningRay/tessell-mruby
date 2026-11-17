@@ -23,12 +23,14 @@ jobs:
         with:
           msystem: UCRT64
           update: true
+          # 2026 msys2 命名：crystal 为 mingw-w64-crystal（ucrt64 仓库），
+          # 工具链前缀是 mingw-w64-ucrt-x86_64-*。
           install: >-
             git
             make
-            mingw-w64-ucrt64-crystal
-            mingw-w64-ucrt64-gcc
-            mingw-w64-ucrt64-ruby
+            mingw-w64-crystal
+            mingw-w64-ucrt-x86_64-gcc
+            mingw-w64-ucrt-x86_64-ruby
 
       - name: Build + spec + gates
         run: powershell -ExecutionPolicy Bypass -File scripts/build.ps1
