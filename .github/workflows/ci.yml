@@ -52,3 +52,25 @@ jobs:
           path: |
             bin/log_explorer.exe
             bin/log_explorer_builtin.exe
+
+  # plan §5 P1：Linux/macOS 仅编译检查（--no-codegen 类型检查，不链接、
+  # 不承诺运行）。运行承诺仍仅 Windows（R7）。
+  compile-check:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: crystal-lang/install-crystal@v1
+
+      - name: shards install
+        run: shards install
+
+      - name: Type-check library + demo + specs
+        run: |
+          crystal build --no-codegen examples/log-explorer/main.cr
+          crystal build --no-codegen examples/log-explorer/main_builtin.cr
+          crystal spec --no-codegen

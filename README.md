@@ -14,7 +14,8 @@ Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全�
 | spec | ✅ 26 examples 全绿（`crystal spec`） |
 | 门禁自动化 | ✅ `--demo-gates --json` 无人值守，JSON 进 CI 工件 |
 | CI（windows-latest + MSYS2 UCRT64） | ✅ 构建 + spec + 门禁 |
-| P1 shard 发布 | ✅ `0.1.0`（tag `v0.1.0`；API 冻结候选见 [api-freeze](docs/api-freeze.md)） |
+| P1 shard 发布 | ✅ `0.1.0`（tag `v0.1.0`；接入指南 + 兼容矩阵齐备） |
+| CI（Linux/macOS 编译检查） | ✅ `--no-codegen` 类型检查，不承诺运行 |
 
 ## 为什么单独一个仓库
 
@@ -67,6 +68,8 @@ bin\log_explorer.exe --window --demo-capture examples\log-explorer\ui.rb
 - [`docs/demo.md`](docs/demo.md)：P0 验收用 hero demo「Log Explorer」规格。
 - [`docs/go-no-go.md`](docs/go-no-go.md)：**P0 结论报告**——门禁实测数字、实现要点与偏差、上游缺口、P1 建议。
 - [`docs/api-freeze.md`](docs/api-freeze.md)：API 冻结候选（Crystal 侧 / 脚本 DSL / 宿主 glue 惯例 / Config）。
+- [`docs/integration.md`](docs/integration.md)：接入指南——最小嵌入、Host.* glue、错误条、热重载、打包预算。
+- [`docs/COMPATIBILITY.md`](docs/COMPATIBILITY.md)：版本兼容矩阵与升级规则（升级必重跑全门禁）。
 
 ## 明确不做
 
