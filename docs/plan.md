@@ -1,6 +1,6 @@
 # 计划：Tessell mruby 脚本层
 
-- 状态：**阶段 0（计划冻结）**，尚未实现
+- 状态：P0/P1 已完成（v0.1.0，G1–G6 全绿，见 [go-no-go.md](go-no-go.md)）；P2 已细化并排期（W5 起，见 §5 / §7）
 - 上游：`ShiningRay/tessell`（GUI 核心）、`ShiningRay/mrb.cr`（mruby 绑定）
 - 目标平台：Windows 优先（MSYS2 UCRT64 / Crystal `x86_64-w64-windows-gnu`）
 
@@ -81,9 +81,33 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 - 文档：接入指南、脚本 API 参考、与 tessell 版本兼容矩阵。
 - 发布 `0.1.0`（git tag + shard 可消费）；失败则回滚到"应用内内置"。
 
-### P2：稳定（无固定排期）
+### P2：稳定与硬化（核心 3 周 + 条件项，W5 起）
 
-- 脚本 API 冻结、错误码、RITE 预编译管线、插件发现/加载器、性能基线跟踪、跨平台评估。
+P0/P1 已收口（v0.1.0，G1–G6 全绿）。P2 目标：脚本 API 正式冻结、DSL 可用性补齐、
+上游缺口收敛、性能基线可持续跟踪，交付 **0.2.0**。仍受 §2 三约束（可选 / 不夺权 / 可回滚）。
+
+| 编号 | 任务 | 交付物 | 人日 |
+| --- | --- | --- | --- |
+| T2.1 | DSL 裸形式 sugar（prelude 委托） | `Config` 增加可选 prelude（默认关，`Tessell.*` 保持规范形式）；`Bridge.install` 旁注入委托、`reload` 重放（新 State）；spec 覆盖裸脚本声明/回调/闭包跨帧 | 1.0 |
+| T2.2 | 错误报告升级（含错误码，上游联动） | `ScriptError` 稳定错误码；跟进 [mrb.cr#2](https://github.com/ShiningRay/mrb.cr/issues/2) / [#4](https://github.com/ShiningRay/mrb.cr/issues/4)，可用则简化 `__tessell_protect` 并补齐顶层运行期行号；必要时提上游 PR（不 fork） | 1.0 |
+| T2.3 | RITE 预编译管线（条件项） | 依赖 [mrb.cr#3](https://github.com/ShiningRay/mrb.cr/issues/3)（dump debug info）；`rbc` 预编译工具 + irep 加载路径；G7 门禁 + 启动/包体对比。当前 3.6ms / 1.19MB 已达标，非阻塞 | 2.0 |
+| T2.4 | 布局参数 DSL 化 | `row/column/node` 可选 gap/padding 参数（api-freeze §5 遗留）；不传参时行为与 0.1.0 逐位一致 | 1.5 |
+| T2.5 | 插件发现/加载器 | scripts 目录发现 + 清单校验 + 加载顺序；「单 State 顺序 eval vs 每插件一 Runtime」决策记录；逐插件错误隔离 | 2.0 |
+| T2.6 | 性能基线跟踪 | gates.json 基线入库 + CI 趋势对比与回归阈值（G8） | 1.0 |
+| T2.7 | 跨平台评估（条件项，跟车 tessell X0–X8） | 触发 = tessell SDL2 Host（X1/X3）可跑真实窗口；评估脚本层本体（Runtime/Decls/Bridge/Events 无 Windows 依赖）三平台运行，输出 Go/No-Go；运行支持是否立项另议 | 1.0 |
+| T2.8 | 版本矩阵升级演练（条件项） | 触发 = tessell / mrb.cr / Crystal 任一新 minor，或 W8 固定演练一次；全门禁重跑 + COMPATIBILITY 增行 | 1.0 |
+| T2.9 | API 正式冻结 + 0.2.0 发布 | api-freeze 按 T2.1/T2.4 新面评审定稿；CHANGELOG；tag + Release | 1.5 |
+
+条件项规则：T2.3 截止 W8（2026-12-20）未触发则降级为上游跟踪记录，不阻塞 0.2.0；
+T2.7/T2.8 无截止，触发即插入当前周并顺延 T2.9。T2.1 已实证注意点：用户顶层同名
+`def` 会遮蔽委托（文档写明）；kwargs 经 splat 转发按位置 Hash 打包，兼容。
+
+**P2 条件门禁**（随对应任务启用，纳入 `--demo-gates` 输出）：
+
+| 编号 | 判据 | 测量方式 |
+| --- | --- | --- |
+| G7 预编译等价性 | irep 加载脚本的解析/运行期错误仍带 file:line；G1–G6 复跑全绿 | T2.3 落地后随门禁脚本输出 |
+| G8 基线回归 | 关键指标（reload/e2e/callback p99、exe 与启动增量、live_objects 差值）较入库基线劣化 > 25%，或超 §6 门限，即 FAIL | CI 对比入库 gates.json 基线 |
 
 ## 6. 六项门禁
 
@@ -104,8 +128,11 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 | --- | --- |
 | W1 | T0.1–T0.4：骨架、Runtime、Handles、声明侧 Bridge |
 | W2 | T0.5–T0.7：事件闭环、demo、G1–G6、Go/No-Go 报告 |
-| W3–W4 | P1：模块化、CI、文档、0.1.0 发布 |
-| W5+ | P2 视使用情况推进 |
+| W3–W4 | P1：模块化、CI、文档、0.1.0 发布（实际提前于 2026-11-18 收口） |
+| W5（11-23–11-29） | T2.1、T2.4、T2.6：DSL sugar、布局参数、性能基线跟踪 |
+| W6（11-30–12-06） | T2.5、T2.2：插件加载器、错误报告升级（错误码 + 上游联动） |
+| W7（12-07–12-13） | T2.9：API 冻结评审、0.2.0 发布（含缓冲） |
+| 条件窗 | T2.3 截止 W8（12-20）；T2.7/T2.8 触发即插入并顺延 T2.9；P1 提前收口后的空档（11-19–11-22）用于上游 PR 预研 |
 
 ## 8. 风险登记
 
@@ -126,12 +153,13 @@ P0 结束只回答一个问题：**值不值得继续做成 shard？** 判据：
 | --- | --- | --- |
 | P0 | 8–10 | 含门禁与 Go/No-Go |
 | P1 | 5–8 | 模块化、CI、文档、发布 |
-| P2 | 待估 | 冻结 API 后按需求排 |
+| P2 | 8（核心 W5–W7）＋ ≤4（条件项） | DSL sugar、插件加载器、基线跟踪；RITE/跨平台/升级演练为条件项；0.2.0 |
 
 ## 10. 交付物
 
 - P0：Log Explorer demo（规格见 [`demo.md`](demo.md)）、G1–G6 报告、API 冻结草案、Go/No-Go 结论。
 - P1：`tessell_mruby` 0.1.0、接入文档、CI 工作流、兼容矩阵。
+- P2：`tessell_mruby` 0.2.0（API 正式冻结）、DSL prelude sugar、插件加载器、性能基线跟踪与 G7/G8；RITE 管线与跨平台评估为条件交付。
 - 全程：上游 mrb.cr 的 issue/PR（不 fork）。
 
 ## 11. 开放问题
