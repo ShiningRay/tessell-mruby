@@ -26,7 +26,7 @@ module TessellMRuby
     # 脚本错误（同一节点两个回调没有合理语义）。
     def register_frame(key : Tessell::UI::UiKey, state : MRuby::State, proc_value : MRuby::Value) : Nil
       if @frame.has_key?(key)
-        raise ArgumentError.new("callback already registered for this key in the current frame")
+        raise ArgumentError.new("[tessell-dup-key] callback already registered for this key in the current frame")
       end
       ref = state.ref(proc_value)
       @frame[key] = ref
@@ -36,7 +36,7 @@ module TessellMRuby
     # 静态降级模式：load 时注册，跨帧持久。
     def register_persistent(key : Tessell::UI::UiKey, state : MRuby::State, proc_value : MRuby::Value) : Nil
       if @persistent.has_key?(key)
-        raise ArgumentError.new("persistent callback already registered for this key")
+        raise ArgumentError.new("[tessell-dup-key] persistent callback already registered for this key")
       end
       ref = state.ref(proc_value)
       @persistent[key] = ref

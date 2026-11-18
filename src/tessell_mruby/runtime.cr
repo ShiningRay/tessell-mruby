@@ -194,8 +194,8 @@ module TessellMRuby
         msg = args[1].string? ? args[1].as_s : "unknown script error"
         loc = args[2].string? ? args[2].as_s : ""
         file, line = parse_location(loc)
-        kind = msg.starts_with?("[tessell-type]") ? ScriptError::Kind::TypeError : ScriptError::Kind::Raise
-        err = ScriptError.new(kind, msg, cls, file, line)
+        kind, code = ScriptError.classify_message(msg, cls)
+        err = ScriptError.new(kind, msg, cls, file, line, code)
         @caught_in_protect = err
         record_error(err)
         nil
@@ -218,7 +218,7 @@ module TessellMRuby
     private def invoke_protected(proc_value : MRuby::Value) : ScriptError?
       recv = @protect_recv
       unless recv && !recv.released?
-        raise ScriptError.new(ScriptError::Kind::Raise, "error boundary is not installed")
+        raise ScriptError.new(ScriptError::Kind::Raise, "error boundary is not installed", code: ScriptError::Code::StateError)
       end
       @caught_in_protect = nil
       begin
@@ -226,7 +226,7 @@ module TessellMRuby
           [] of MRuby::CallbackValue, block: proc_value)
       rescue ex : MRuby::Error
         # wrapper 自身失败（极少数：mruby 内部错误越过 rescue）
-        return ScriptError.from_mruby(ex, classify(ex))
+        return ScriptError.from_mruby(ex, *ScriptError.classify_message(ex.message || "", ex.script_class))
       end
       @caught_in_protect
     end
@@ -242,7 +242,16 @@ module TessellMRuby
     def host_method(module_name : String, name : String, arity : Int32,
                     &block : MRuby::Args -> MRuby::CallbackValue) : Nil
       ensure_open!
-      @state.define_module_function(module_name, name, arity) { |args| block.call(args) }
+      # T2.2：宿主块内 Crystal 异常打 [tessell-host] 标签重抛——此前 Kind::Host
+      # 无赋值点（冻结文档承诺了却没落地），现在宿主异常可被脚本侧与宿主侧
+      # 按 code 稳定识别（错误隔离语义不变：照旧转 ScriptError，不崩进程）。
+      @state.define_module_function(module_name, name, arity) do |args|
+        begin
+          block.call(args)
+        rescue ex : Exception
+          raise ArgumentError.new("[tessell-host] #{name}: #{ex.class.name}: #{ex.message}")
+        end
+      end
     end
 
     def eval(code : String) : MRuby::Value
@@ -250,7 +259,7 @@ module TessellMRuby
       begin
         @state.eval(code)
       rescue ex : MRuby::Error
-        se = ScriptError.from_mruby(ex, classify(ex))
+        se = ScriptError.from_mruby(ex, *ScriptError.classify_message(ex.message || "", ex.script_class))
         record_error(se)
         raise se
       end
@@ -267,7 +276,7 @@ module TessellMRuby
         @state.compile(code, path)
         @state.load_file(path)
       rescue ex : MRuby::Error
-        se = ScriptError.from_mruby(ex, classify(ex))
+        se = ScriptError.from_mruby(ex, *ScriptError.classify_message(ex.message || "", ex.script_class))
         record_error(se)
         raise se
       ensure
@@ -327,12 +336,12 @@ module TessellMRuby
     end
 
     protected def enter_block_mode : Nil
-      raise ArgumentError.new("script mixes block DSL and static begin_* DSL") if @mode == Mode::Static
+      raise ArgumentError.new("[tessell-state] script mixes block DSL and static begin_* DSL") if @mode == Mode::Static
       @mode = Mode::Block
     end
 
     protected def enter_static_mode : Nil
-      raise ArgumentError.new("script mixes block DSL and static begin_* DSL") if @mode == Mode::Block
+      raise ArgumentError.new("[tessell-state] script mixes block DSL and static begin_* DSL") if @mode == Mode::Block
       @mode = Mode::Static
       @decls.static_mode!
     end
@@ -384,7 +393,8 @@ module TessellMRuby
       fp = @frame_proc
       unless fp && !fp.released?
         raise ScriptError.new(ScriptError::Kind::Raise,
-          "no window block registered (script must call Tessell.window with a block)")
+          "[tessell-state] no window block registered (script must call Tessell.window with a block)",
+          code: ScriptError::Code::StateError)
       end
 
       @events.release_frame_all
@@ -489,11 +499,6 @@ module TessellMRuby
 
     def error_count : Int32
       @errors.size
-    end
-
-    private def classify(ex : MRuby::Error) : ScriptError::Kind
-      msg = ex.message || ""
-      msg.starts_with?("[tessell-type]") ? ScriptError::Kind::TypeError : ScriptError::Kind::Raise
     end
 
     private def elapsed_ms(t0 : Time::Span) : Float64

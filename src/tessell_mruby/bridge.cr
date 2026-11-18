@@ -190,16 +190,16 @@ module TessellMRuby
 
     private def require_loading(name : String) : Nil
       unless @rt.loading?
-        raise ArgumentError.new("Tessell.#{name} may only be called while the script is loading (top level or window block)")
+        raise ArgumentError.new("[tessell-state] Tessell.#{name} may only be called while the script is loading (top level or window block)")
       end
     end
 
     private def require_phase(name : String) : Nil
       if @rt.static_mode?
-        raise ArgumentError.new("Tessell.#{name} cannot be nested inside the frame proc; use begin_*/end_node in static mode")
+        raise ArgumentError.new("[tessell-state] Tessell.#{name} cannot be nested inside the frame proc; use begin_*/end_node in static mode")
       end
       unless @rt.in_phase?
-        raise ArgumentError.new("Tessell.#{name} called outside the window block (declarations are only emitted while the frame proc runs)")
+        raise ArgumentError.new("[tessell-state] Tessell.#{name} called outside the window block (declarations are only emitted while the frame proc runs)")
       end
     end
 
@@ -209,7 +209,7 @@ module TessellMRuby
     # block 模式，block 即帧过程。
     private def window(args : MRuby::Args) : MRuby::CallbackValue
       if @rt.window_title_set?
-        raise ArgumentError.new("Tessell.window may only be called once per script")
+        raise ArgumentError.new("[tessell-state] Tessell.window may only be called once per script")
       end
       title = str_arg(args, 0)
       w = int_arg(args, 1)
@@ -262,7 +262,7 @@ module TessellMRuby
       padding = insets_arg(args)
       if @rt.static_mode?
         require_loading(name)
-        raise ArgumentError.new("Tessell.#{name} without a block is not supported in static mode; use Tessell.begin_#{name}/Tessell.end_node")
+        raise ArgumentError.new("[tessell-state] Tessell.#{name} without a block is not supported in static mode; use Tessell.begin_#{name}/Tessell.end_node")
       end
       require_phase(name)
       @decls.push_container(key, kind, dir, gap: gap, padding: padding)
@@ -329,7 +329,7 @@ module TessellMRuby
       if @rt.static_mode?
         require_loading("on_click")
         unless @decls.declared_static?(key)
-          raise ArgumentError.new("Tessell.on_click: unknown key #{key.inspect} (declare it with text/row/column/button first)")
+          raise ArgumentError.new("[tessell-state] Tessell.on_click: unknown key #{key.inspect} (declare it with text/row/column/button first)")
         end
         @events.register_persistent(@decls.derive_key(key), @state, blk)
       else
@@ -345,7 +345,7 @@ module TessellMRuby
       key = str_arg(args, 0)
       body = str_arg(args, 1)
       unless @decls.set_text(key, body)
-        raise ArgumentError.new("Tessell.set_text: unknown key #{key.inspect} (static text must be declared with Tessell.text first)")
+        raise ArgumentError.new("[tessell-state] Tessell.set_text: unknown key #{key.inspect} (static text must be declared with Tessell.text first)")
       end
       @rt.request_frame
       nil

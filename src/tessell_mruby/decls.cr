@@ -104,10 +104,10 @@ module TessellMRuby
 
     private def check_dup(key : Tessell::UI::UiKey, script_key : String) : Nil
       unless @seen.add?(key)
-        raise ArgumentError.new("duplicate script key #{script_key.inspect} in one frame: two nodes share an identity; use a unique key per node")
+        raise ArgumentError.new("[tessell-dup-key] duplicate script key #{script_key.inspect} in one frame: two nodes share an identity; use a unique key per node")
       end
       if buf_for_phase.size >= @config.max_decl_nodes
-        raise ArgumentError.new("decl node limit exceeded (#{@config.max_decl_nodes})")
+        raise ArgumentError.new("[tessell-limit] decl node limit exceeded (#{@config.max_decl_nodes})")
       end
     end
 

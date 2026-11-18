@@ -43,7 +43,7 @@ module TessellMRuby
       id = @freelist.pop? || begin
         fresh = @next_id
         if fresh > @capacity
-          raise CapacityError.new("handle table exhausted (max #{@capacity})")
+          raise CapacityError.new("[tessell-limit] handle table exhausted (max #{@capacity})")
         end
         @next_id = fresh + 1
         fresh
