@@ -31,6 +31,10 @@ jobs:
             mingw-w64-ucrt-x86_64-shards
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-ruby
+            # tessell 文本栈的 FT/HB 链接依赖（demo exe 链接需要）
+            mingw-w64-ucrt-x86_64-freetype
+            mingw-w64-ucrt-x86_64-harfbuzz
+            mingw-w64-ucrt-x86_64-brotli
 
       - name: Build + spec + gates
         run: bash scripts/build.sh
