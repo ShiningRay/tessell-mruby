@@ -67,6 +67,11 @@ module TessellMRuby
     # 因此声明阶段与回调经由一个 Ruby wrapper 调用，异常在 Ruby 侧 rescue 后
     # 把 class/message/位置回传宿主。@caught_in_protect 是 wrapper → Runtime
     # 的错误通道。
+    #
+    # 位置选取（T2.1）：backtrace 里跳过 "(eval)" 帧（prelude 委托与宿主 glue
+    # 都是 rt.eval 注入的 mruby eval 帧；mruby 把经委托调用的块归到 wrapper
+    # 帧），取第一个脚本帧——即出错 DSL 的调用点行。规范形式（非 prelude）下
+    # backtrace[0] 本就是脚本帧，行为不变。
     @protect_recv : MRuby::Ref?
     @caught_in_protect : ScriptError? = nil
 
@@ -144,6 +149,13 @@ module TessellMRuby
       @callback_timing = Timing.new
       Bridge.install(self)
       install_error_boundary
+      install_prelude if @config.bare_dsl
+    end
+
+    # T2.1：裸 DSL sugar。reload 换新 State 后必须重放（install_prelude 在
+    # reload 里 load_file 之前调用）。
+    private def install_prelude : Nil
+      @state.eval(Bridge::BARE_DSL_PRELUDE)
     end
 
     # ---- 错误边界 glue ----
@@ -155,7 +167,19 @@ module TessellMRuby
         loc = ""
         begin
           bt = e.backtrace
-          loc = bt[0].to_s if bt && bt.size > 0
+          if bt && bt.size > 0
+            loc = bt[0].to_s
+            i = 0
+            n = bt.size
+            while i < n
+              s = bt[i].to_s
+              if s[0, 6] != "(eval)"
+                loc = s
+                break
+              end
+              i += 1
+            end
+          end
         rescue Exception
         end
         Tessell.__tessell_report(e.class.to_s, e.message.to_s, loc)
@@ -439,6 +463,7 @@ module TessellMRuby
       @window_set = false
       Bridge.install(self)
       install_error_boundary
+      install_prelude if @config.bare_dsl
       load_file(path)
       @reloads += 1
     end

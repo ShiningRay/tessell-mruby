@@ -13,6 +13,29 @@ module TessellMRuby
   #
   # 类型不符 / 重复 key / 容量超限都以 mruby 异常抛回脚本（带 file:line）。
   class Bridge
+    # T2.1 裸 DSL sugar：顶层委托 def（Object 私有方法），每个 DSL 名转发到
+    # Tessell.* 规范形式。已实证（P1 冻结评审期探针）：委托全链路绿，脚本
+    # file:line 不受影响；每次调用多一跳 mruby 派发，声明阶段 p99 < 2ms 预算
+    # 下可忽略。注意：脚本顶层同名 `def` 会遮蔽委托（Ruby 后定义优先）；
+    # kwargs 经 splat 转发按位置 Hash 打包，与 mruby 3.x+ 语义一致。
+    BARE_DSL_PRELUDE = <<-RUBY
+      def window(*args, &blk);         Tessell.window(*args, &blk); end
+      def text(*args, &blk);           Tessell.text(*args, &blk); end
+      def row(*args, &blk);            Tessell.row(*args, &blk); end
+      def column(*args, &blk);         Tessell.column(*args, &blk); end
+      def node(*args, &blk);           Tessell.node(*args, &blk); end
+      def button(*args, &blk);         Tessell.button(*args, &blk); end
+      def begin_row(*args, &blk);      Tessell.begin_row(*args, &blk); end
+      def begin_column(*args, &blk);   Tessell.begin_column(*args, &blk); end
+      def begin_node(*args, &blk);     Tessell.begin_node(*args, &blk); end
+      def end_node(*args, &blk);       Tessell.end_node(*args, &blk); end
+      def on_click(*args, &blk);       Tessell.on_click(*args, &blk); end
+      def set_text(*args, &blk);       Tessell.set_text(*args, &blk); end
+      def invalidate(*args, &blk);     Tessell.invalidate(*args, &blk); end
+      def invalidate_all(*args, &blk); Tessell.invalidate_all(*args, &blk); end
+      def handle(*args, &blk);         Tessell.handle(*args, &blk); end
+    RUBY
+
     def self.install(runtime : Runtime) : Nil
       new(runtime).install
     end

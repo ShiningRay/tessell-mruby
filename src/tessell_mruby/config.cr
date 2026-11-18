@@ -19,12 +19,19 @@ module TessellMRuby
     # 是否允许热重载（G2）。关闭后 reload 抛 InitError。
     getter allow_hot_reload : Bool
 
+    # 裸 DSL sugar（T2.1）：开启后宿主在 load 前注入一批顶层委托 def，脚本可
+    # 省略 `Tessell.` 前缀（`window "w", 10, 10 do ... end`）。默认关——
+    # `Tessell.*` 规范形式始终是冻结 API；本开关只是可配置 sugar，热重载
+    # （reload 换新 State）会自动重放。
+    getter bare_dsl : Bool
+
     def initialize(@max_string_bytes : Int32 = 1_048_576,
                    @max_handles : Int32 = 100_000,
                    @max_decl_nodes : Int32 = 20_000,
                    @max_callbacks_per_frame : Int32 = 64,
                    @callback_budget_ms : Float64 = 1.0,
-                   @allow_hot_reload : Bool = true)
+                   @allow_hot_reload : Bool = true,
+                   @bare_dsl : Bool = false)
     end
   end
 end
