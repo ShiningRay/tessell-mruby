@@ -32,7 +32,7 @@ jobs:
             mingw-w64-ucrt-x86_64-ruby
 
       - name: Build + spec + gates
-        run: powershell -ExecutionPolicy Bypass -File scripts/build.ps1
+        run: bash scripts/build.sh
 
       - name: Upload gates JSON
         uses: actions/upload-artifact@v4
