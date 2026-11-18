@@ -1,0 +1,15 @@
+{
+  "schema": 1,
+  "recorded": "2026-11-18",
+  "source_commit": "T2.6（G8 引入时）",
+  "machine": "Windows 11 x64 门禁机，MSYS2 UCRT64 gcc 16.2.0，Crystal 1.22.1，tessell 0.4.1，mrb.cr 0.2.1，mruby 4.0.0",
+  "note": "G8 基线（plan T2.6）。确定性指标（exe_delta_bytes / live_growth）劣化 >25% 或超 §6 门限即 FAIL；时序 p99 噪声 2-3 倍，比例值 advisory，FAIL 只看 §6 门限。更新基线须重跑全门禁并在 COMPATIBILITY.md 记录。",
+  "metrics": {
+    "reload_ms_p99": 1.52,
+    "e2e_ms_p99": 3.539,
+    "callback_ms_p99": 0.0172,
+    "exe_delta_bytes": 1318885,
+    "startup_delta_ms": 5.68,
+    "live_growth": 0
+  }
+}

@@ -21,7 +21,11 @@ module LogExplorer
     args = ARGV.dup
 
     if args.includes?("--demo-gates")
-      return Gates.run(args.includes?("--json"))
+      baseline = nil
+      if arg = args.find { |a| a.starts_with?("--baseline=") }
+        baseline = arg.split("=", 2)[1]
+      end
+      return Gates.run(args.includes?("--json"), baseline)
     end
 
     if arg = args.find { |a| a.starts_with?("--frames") }

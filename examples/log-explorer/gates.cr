@@ -35,7 +35,7 @@ module LogExplorer
       JSON.parse(h.to_json)
     end
 
-    def self.run(json : Bool) : Int32
+    def self.run(json : Bool, baseline_path : String? = nil) : Int32
       # 门禁脚本走仓库内 ui.rb（不存在则用临时最小脚本）。
       script_path = File.exists?(GATE_SCRIPT) ? GATE_SCRIPT : nil
 
@@ -45,14 +45,16 @@ module LogExplorer
       g4 = gate_g4(script_path)
       g5 = gate_g5(script_path)
       g6 = gate_g6(script_path)
+      g8 = gate_g8(g2, g4, g5, g6, baseline_path)
 
       all_pass = g1["pass"].as_bool? == true && g2["pass"].as_bool? == true &&
                  g3["pass"].as_bool? == true && g4["pass"].as_bool? == true &&
-                 g5["pass"].as_bool? == true && g6["pass"].as_bool? == true
+                 g5["pass"].as_bool? == true && g6["pass"].as_bool? == true &&
+                 g8["pass"].as_bool? == true
 
       json_out = JSON.build do |b|
         b.object do
-          b.field("gates", "G1-G6")
+          b.field("gates", "G1-G6+G8")
           b.field("pass", all_pass)
           b.field("g1_isolation", g1)
           b.field("g2_hot_reload", g2)
@@ -60,10 +62,87 @@ module LogExplorer
           b.field("g4_event_latency", g4)
           b.field("g5_size_startup", g5)
           b.field("g6_soak", g6)
+          b.field("g8_baseline", g8)
         end
       end
       puts json_out
       all_pass ? 0 : 1
+    end
+
+    # ---- G8 基线回归（plan T2.6）----
+    #
+    # 关键指标较入库基线（docs/baseline/gates-baseline.json，--baseline= 传入）
+    # 劣化 > 25%，或超 plan §6 硬门限，即 FAIL。无基线文件时只做硬门限检查
+    # （首次运行 / CI 未传 --baseline 时门禁仍然闭合）。
+    REGRESSION_RATIO = 0.25
+
+    private def self.jnum(a : JSON::Any) : Float64
+      a.as_f? || a.as_i64?.try(&.to_f64) || 0.0
+    end
+
+    private def self.gate_g8(g2 : JSON::Any, g4 : JSON::Any, g5 : JSON::Any,
+                             g6 : JSON::Any, baseline_path : String?) : JSON::Any
+      # 当前值（来自本轮各门禁输出）与 §6 硬门限。全部指标越低越好。
+      current = {
+        "reload_ms_p99"    => jnum(g2["reload_ms_p99"]),
+        "e2e_ms_p99"       => jnum(g4["e2e_ms_p99"]),
+        "callback_ms_p99"  => jnum(g4["callback_ms_p99"]),
+        "exe_delta_bytes"  => jnum(g5["exe_delta_bytes"]),
+        "startup_delta_ms" => jnum(g5["startup_delta_ms"]),
+        "live_growth"      => jnum(g6["live_growth"]),
+      }
+      limits = {
+        "reload_ms_p99"    => 500.0,      # G2 ≤500ms
+        "e2e_ms_p99"       => 16.7,       # G4 < 1 帧
+        "callback_ms_p99"  => 1.0,        # G4 回调 p99
+        "exe_delta_bytes"  => 2_621_440.0, # G5 ≤2.5MB
+        "startup_delta_ms" => 50.0,       # G5 ≤50ms
+        "live_growth"      => 0.0,        # G6 无泄漏
+      }
+
+      base : Hash(String, Float64)? = nil
+      baseline_note = "not provided"
+      if bp = baseline_path
+        if File.exists?(bp)
+          begin
+            parsed = JSON.parse(File.read(bp))["metrics"]
+            base = Hash(String, Float64).new
+            current.keys.each do |k|
+              base[k] = jnum(parsed[k])
+            end
+            baseline_note = bp
+          rescue
+            baseline_note = "#{bp} (unreadable — hard limits only)"
+          end
+        else
+          baseline_note = "#{bp} (missing — hard limits only)"
+        end
+      end
+
+      all_ok = true
+      rows = current.map do |name, cur|
+        bval = base.try(&.[name]?)
+        ratio = nil
+        # 时序 p99 在本机实测 run-to-run 噪声 2–3 倍（同一份代码 e2e p99
+        # 2.57–6.73ms），25% 比例规则对其必然随机误报——仅确定性指标
+        # （exe 增量 / live_objects 差值）把比例劣化作为 FAIL 条件；时序
+        # 指标的比例值照记（advisory），FAIL 只看 §6 硬门限。
+        deterministic = name == "exe_delta_bytes" || name == "live_growth"
+        ratio_ok = true
+        if bval
+          ratio = bval > 0 ? (cur - bval) / bval : (cur > 0 ? Float64::INFINITY : 0.0)
+          ratio_ok = !deterministic || ratio <= REGRESSION_RATIO
+        end
+        limit_ok = cur <= limits[name]
+        ok = ratio_ok && limit_ok
+        all_ok &&= ok
+        jhash({"name" => name, "current" => cur, "baseline" => bval,
+               "regression_ratio" => ratio, "hard_limit" => limits[name],
+               "advisory" => !deterministic, "ok" => ok})
+      end
+
+      jhash({"pass" => all_ok, "baseline" => baseline_note,
+             "ratio_limit" => REGRESSION_RATIO, "metrics" => rows})
     end
 
     # 独立最小脚本（ui.rb 不在场时的门禁脚本）。

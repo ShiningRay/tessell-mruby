@@ -48,8 +48,8 @@ crystal build --release examples/log-explorer/main_builtin.cr -o bin/log_explore
 echo "== crystal spec --release"
 crystal spec --release
 
-echo "== G1-G6 gates"
-./bin/log_explorer.exe --demo-gates --json > artifacts/gates.json
+echo "== G1-G6+G8 gates"
+./bin/log_explorer.exe --demo-gates --json --baseline docs/baseline/gates-baseline.json > artifacts/gates.json
 cat artifacts/gates.json
 
 echo "== build OK"

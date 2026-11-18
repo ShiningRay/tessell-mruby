@@ -107,7 +107,7 @@ T2.7/T2.8 无截止，触发即插入当前周并顺延 T2.9。T2.1 已实证注
 | 编号 | 判据 | 测量方式 |
 | --- | --- | --- |
 | G7 预编译等价性 | irep 加载脚本的解析/运行期错误仍带 file:line；G1–G6 复跑全绿 | T2.3 落地后随门禁脚本输出 |
-| G8 基线回归 | 关键指标（reload/e2e/callback p99、exe 与启动增量、live_objects 差值）较入库基线劣化 > 25%，或超 §6 门限，即 FAIL | CI 对比入库 gates.json 基线 |
+| G8 基线回归 | 确定性指标（exe 增量、live_objects 差值）较入库基线劣化 > 25% 或超 §6 门限即 FAIL；时序 p99（reload/e2e/callback/startup）本机实测噪声 2–3 倍，比例值作 advisory 记录，FAIL 只看 §6 硬门限 | CI 对比入库基线 `docs/baseline/gates-baseline.json`（`--baseline=`） |
 
 ## 6. 六项门禁
 
