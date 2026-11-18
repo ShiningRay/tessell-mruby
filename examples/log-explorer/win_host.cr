@@ -361,6 +361,9 @@ module LogExplorer
     app.frame
     app.frame
     backend.sync_atlas(atlas)
+    if demo_capture
+      Dir.mkdir_p("artifacts/frames") unless Dir.exists?("artifacts/frames")
+    end
     STDERR.puts "lex: loop start" if DEBUG_RENDER
 
     frames = 0
@@ -388,6 +391,10 @@ module LogExplorer
       render(app, backend, renderer, atlas, placement, theme)
       LexGdi32.SwapBuffers(hdc)
       if demo_capture
+        # 帧序列（GIF 素材）：每 3 帧一抽，120 帧 → 40 张
+        if frames % 3 == 0
+          capture_bmp(sprintf("artifacts/frames/f%03d.bmp", frames), WIDTH, HEIGHT)
+        end
         case frames
         when 30
           capture_bmp("artifacts/demo_1_initial.bmp", WIDTH, HEIGHT)

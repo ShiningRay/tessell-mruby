@@ -11,6 +11,7 @@ Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全�
 | 项目 | 状态 |
 | --- | --- |
 | P0 spike（Runtime/Handles/Bridge/事件 + Log Explorer demo + G1–G6） | ✅ 全部 PASS（[报告](docs/go-no-go.md)） |
+| 演示素材 | ✅ [docs/assets/demo.gif](docs/assets/demo.gif)（三段全程循环）+ 三段截图 |
 | spec | ✅ 26 examples 全绿（`crystal spec`） |
 | 门禁自动化 | ✅ `--demo-gates --json` 无人值守，JSON 进 CI 工件 |
 | CI（windows-latest + MSYS2 UCRT64） | ✅ 构建 + spec + 门禁 |
@@ -39,7 +40,7 @@ bin\log_explorer.exe --demo-gates --json
 bin\log_explorer.exe --frames=60
 bin\log_explorer.exe --window=25 --screenshot=shot.bmp   # 自动退出 + 抓帧
 
-# 5) 三段演示证据（热重载 / 错误注入 / HUD → artifacts/demo_*.png）
+# 5) 三段演示证据（热重载 / 错误注入 / HUD → docs/assets/demo.gif + demo_*.png）
 bin\log_explorer.exe --window --demo-capture examples\log-explorer\ui.rb
 ```
 
