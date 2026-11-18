@@ -69,8 +69,10 @@ jobs:
       - name: shards install
         run: shards install
 
+      # crystal spec 会编译并链接 spec 二进制（需要 mruby 产物），
+      # 类型检查统一走 --no-codegen 的 build 入口（spec/type_check.cr 汇总全部 spec）。
       - name: Type-check library + demo + specs
         run: |
           crystal build --no-codegen examples/log-explorer/main.cr
           crystal build --no-codegen examples/log-explorer/main_builtin.cr
-          crystal spec --no-codegen
+          crystal build --no-codegen spec/type_check.cr
