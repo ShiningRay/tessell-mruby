@@ -1,8 +1,9 @@
 # 兼容矩阵（design §12：独立维护）
 
-- 更新：2026-11-18（tessell_mruby 0.1.0）
-- 规则：任何一个依赖升级都必须重跑**全部**六项门禁 + spec（plan §4）；
-  门禁脚本 `bin/log_explorer.exe --demo-gates --json`，exit code = 全过 ? 0 : 1。
+- 更新：2026-11-18（tessell_mruby 0.2.0）
+- 规则：任何一个依赖升级都必须重跑**全部**门禁 + spec（plan §4）；
+  门禁脚本 `bin/log_explorer.exe --demo-gates --json "--baseline=docs/baseline/gates-baseline.json"`，
+  exit code = 全过 ? 0 : 1。基线更新须在 CHANGELOG 记录。
 
 ## 1. 已验证矩阵
 
@@ -11,6 +12,9 @@
 | 0.1.0 | 0.4.1 | 0.2.1 | 4.0.0 (`831da26b`) | 1.22.1 | MSYS2 UCRT64 gcc 16.2.0 | Windows 11 x64（本机） | G1–G6 全 PASS | 本机实测，报告见 go-no-go.md |
 | 0.1.0 | 0.4.1 | 0.2.1 | 4.0.0（CI 内 make） | 1.22.x（msys2 最新） | MSYS2 UCRT64 gcc（CI 最新） | windows-latest（GitHub Actions） | G1–G6 全 PASS | run 44209949056；reload p99 0.51ms、e2e p99 2.24ms |
 | 0.1.0 | 0.4.1 | 0.2.1 | —（不链接） | ubuntu-latest / macos-latest 最新 | — | Linux / macOS | 仅编译检查 | `crystal build/spec --no-codegen`；**不承诺运行**（R7） |
+| 0.2.0 | 0.4.1 | 0.2.1 | 4.0.0 (`831da26b`) | 1.22.1 | MSYS2 UCRT64 gcc 16.2.0 | Windows 11 x64（本机） | G1–G6+G8 全 PASS | 带基线；P2 核心四特性（T2.1/2.2/2.4/2.5/2.6） |
+| 0.2.0 | 0.4.1 | 0.2.1 | 4.0.0（CI 内 make） | 1.22.x（msys2 最新） | MSYS2 UCRT64 gcc（CI 最新） | windows-latest（GitHub Actions） | G1–G6+G8 全 PASS | run 44241341245；reload p99 0.64ms、e2e p99 2.14ms、回调 p99 0.005ms、exe 增量 1.26MB、live 244→244 |
+| 0.2.0 | 0.4.1 | 0.2.1 | —（不链接） | ubuntu-latest / macos-latest 最新 | — | Linux / macOS | 仅编译检查 | 同 run 44241341245；`--no-codegen`，不承诺运行（R7） |
 
 ## 2. 升级规则
 

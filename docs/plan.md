@@ -1,6 +1,6 @@
 # 计划：Tessell mruby 脚本层
 
-- 状态：P0/P1 已完成（v0.1.0，G1–G6 全绿，见 [go-no-go.md](go-no-go.md)）；P2 已细化并排期（W5 起，见 §5 / §7）
+- 状态：P0/P1 已完成（v0.1.0）；**P2 核心已交付并发布 v0.2.0**（T2.1/2.2/2.4/2.5/2.6 + G8，API 正式冻结，CI run 44241341245 绿）；条件项 T2.3/T2.7/T2.8 截至 2026-11-18 均未触发（mrb.cr#3 OPEN、tessell 无 Platform::Host release、无新 minor），继续按 §5 条件项规则跟踪
 - 上游：`ShiningRay/tessell`（GUI 核心）、`ShiningRay/mrb.cr`（mruby 绑定）
 - 目标平台：Windows 优先（MSYS2 UCRT64 / Crystal `x86_64-w64-windows-gnu`）
 
