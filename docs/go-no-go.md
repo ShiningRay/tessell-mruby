@@ -18,6 +18,12 @@
 
 脚本帧的分配与耗时单列（HUD 与 G4 口径），未并入 tessell 零分配叙事（design §10 口径一致）。
 
+以上六项门禁同样在 **GitHub Actions windows-latest（MSYS2 UCRT64）独立机器上全 PASS**
+（run 44209949056：reload p99 0.51ms、e2e p99 2.24ms、exe 增量 1.19MB、live 233→233；
+26 spec 全绿；gates.json 与 demo 双 exe 进 CI 工件）。CI 教训：2026 msys2 包名前缀
+统一为 `mingw-w64-ucrt-x86_64-*`，shards 是独立包，FT/HB/brotli 是 tessell 文本栈
+的链接依赖（见 .github/workflows/ci.yml）。
+
 ### 演示证据（demo.md §10 三段）
 
 `bin/log_explorer.exe --window --demo-capture examples/log-explorer/ui.rb` 自动产出

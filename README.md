@@ -1,5 +1,7 @@
 # tessell-mruby
 
+[![CI](https://github.com/ShiningRay/tessell-mruby/actions/workflows/ci.yml/badge.svg)](https://github.com/ShiningRay/tessell-mruby/actions/workflows/ci.yml)
+
 Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全部六项门禁（结论见 [`docs/go-no-go.md`](docs/go-no-go.md)），当前进入 P1（独立 shard 化）。
 
 > 定位不是"用 Ruby 写 Tessell 应用"，而是给已有 Tessell 应用增加**可选的**脚本、插件、热重载能力。主应用模型仍然是有静态类型与零分配承诺的 Crystal。
