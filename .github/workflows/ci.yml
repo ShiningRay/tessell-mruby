@@ -19,6 +19,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # FT/HB/brotli 是 tessell 文本栈的链接依赖（demo exe 需要）
       - uses: msys2/setup-msys2@v2
         with:
           msystem: UCRT64
@@ -31,7 +32,6 @@ jobs:
             mingw-w64-ucrt-x86_64-shards
             mingw-w64-ucrt-x86_64-gcc
             mingw-w64-ucrt-x86_64-ruby
-            # tessell 文本栈的 FT/HB 链接依赖（demo exe 链接需要）
             mingw-w64-ucrt-x86_64-freetype
             mingw-w64-ucrt-x86_64-harfbuzz
             mingw-w64-ucrt-x86_64-brotli
