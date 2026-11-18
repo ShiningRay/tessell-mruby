@@ -25,13 +25,18 @@ module TessellMRuby
     # （reload 换新 State）会自动重放。
     getter bare_dsl : Bool
 
+    # 单次 load_plugins 扫描的插件数上限（T2.5）。超出部分记为 LimitExceeded
+    # 失败条目，不静默截断。
+    getter max_plugins : Int32
+
     def initialize(@max_string_bytes : Int32 = 1_048_576,
                    @max_handles : Int32 = 100_000,
                    @max_decl_nodes : Int32 = 20_000,
                    @max_callbacks_per_frame : Int32 = 64,
                    @callback_budget_ms : Float64 = 1.0,
                    @allow_hot_reload : Bool = true,
-                   @bare_dsl : Bool = false)
+                   @bare_dsl : Bool = false,
+                   @max_plugins : Int32 = 64)
     end
   end
 end

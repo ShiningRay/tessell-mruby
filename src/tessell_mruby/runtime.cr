@@ -268,25 +268,32 @@ module TessellMRuby
     def load_file(path : String) : Nil
       ensure_open!
       @loading = true
-      begin
-        code = File.read(path)
-        # 解析错误：先直接编译——mruby parser 消息带精确 "line N"，file=path。
-        # （compile+load_irep 的 dump 往返会丢 debug info——上游缺口，见
-        # P0 上游 issue 清单——所以执行仍走 load_file 的内存编译路径。）
-        @state.compile(code, path)
-        @state.load_file(path)
-      rescue ex : MRuby::Error
-        se = ScriptError.from_mruby(ex, *ScriptError.classify_message(ex.message || "", ex.script_class))
-        record_error(se)
-        raise se
-      ensure
-        @loading = false
+      err = load_script(path)
+      @loading = false
+      if e = err
+        record_error(e)
+        raise e
       end
       # block 模式加载完成后，下一帧跑帧过程；静态模式缓冲已在 load 中就绪。
       # 顶层运行期异常：file 可得、line 不可得（mruby 异常消息不带位置，
       # C 层 backtrace API 未由 mrb.cr 暴露）——声明阶段与回调经
       # __tessell_protect wrapper，file:line 都有。
       @needs_frame = true
+    end
+
+    # 装载单个脚本文件（compile 前置检查 + load_file 内存编译路径），错误
+    # 归一为 ScriptError 返回而不抛——load_file 与 load_plugins（T2.5 逐插件
+    # 隔离）共用。调用方负责 @loading 标志。
+    private def load_script(path : String) : ScriptError?
+      code = File.read(path)
+      # 解析错误：先直接编译——mruby parser 消息带精确 "line N"，file=path。
+      # （compile+load_irep 的 dump 往返会丢 debug info——上游缺口，见
+      # P0 上游 issue 清单——所以执行仍走 load_file 的内存编译路径。）
+      @state.compile(code, path)
+      @state.load_file(path)
+      nil
+    rescue ex : MRuby::Error
+      ScriptError.from_mruby(ex, *ScriptError.classify_message(ex.message || "", ex.script_class))
     end
 
     def closed? : Bool

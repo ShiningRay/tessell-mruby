@@ -21,6 +21,7 @@ require "./tessell_mruby/decls"
 require "./tessell_mruby/events"
 require "./tessell_mruby/runtime"
 require "./tessell_mruby/bridge"
+require "./tessell_mruby/plugins"
 
 module TessellMRuby
   VERSION = "0.1.0"
