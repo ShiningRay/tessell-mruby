@@ -2,7 +2,7 @@
 
 [![CI](https://github.com/ShiningRay/tessell-mruby/actions/workflows/ci.yml/badge.svg)](https://github.com/ShiningRay/tessell-mruby/actions/workflows/ci.yml)
 
-Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全部六项门禁（结论见 [`docs/go-no-go.md`](docs/go-no-go.md)），当前进入 P1（独立 shard 化）。
+Tessell 的可选 **mruby 脚本 / 插件层**。P0/P1 已收口（[`docs/go-no-go.md`](docs/go-no-go.md)），**P2 核心已交付并发布 `0.2.0`（API 正式冻结，见 [`docs/api-freeze.md`](docs/api-freeze.md)）**。
 
 > 定位不是"用 Ruby 写 Tessell 应用"，而是给已有 Tessell 应用增加**可选的**脚本、插件、热重载能力。主应用模型仍然是有静态类型与零分配承诺的 Crystal。
 
@@ -11,11 +11,14 @@ Tessell 的可选 **mruby 脚本 / 插件层**。P0 spike 已完成并通过全�
 | 项目 | 状态 |
 | --- | --- |
 | P0 spike（Runtime/Handles/Bridge/事件 + Log Explorer demo + G1–G6） | ✅ 全部 PASS（[报告](docs/go-no-go.md)） |
+| P2 核心（T2.1/2.2/2.4/2.5/2.6） | ✅ 裸 DSL sugar、稳定错误码、布局参数、插件加载器、G8 基线门禁 |
+| API 冻结 | ✅ `0.2.0` 正式冻结（[api-freeze.md](docs/api-freeze.md) §6 变更规则） |
 | 演示素材 | ✅ [docs/assets/demo.gif](docs/assets/demo.gif)（三段全程循环）+ 三段截图 |
-| spec | ✅ 26 examples 全绿（`crystal spec`） |
+| spec | ✅ 52 examples 全绿（`crystal spec`） |
 | 门禁自动化 | ✅ `--demo-gates --json` 无人值守，JSON 进 CI 工件 |
 | CI（windows-latest + MSYS2 UCRT64） | ✅ 构建 + spec + 门禁 |
-| P1 shard 发布 | ✅ `0.1.0`（tag `v0.1.0`；接入指南 + 兼容矩阵齐备） |
+| P1 shard 发布 | ✅ `0.1.0`（tag `v0.1.0`） |
+| P2 shard 发布 | ✅ `0.2.0`（tag `v0.2.0`；API 冻结 + P2 核心四特性 + G8） |
 | CI（Linux/macOS 编译检查） | ✅ `--no-codegen` 类型检查，不承诺运行 |
 
 ## 为什么单独一个仓库
@@ -33,8 +36,8 @@ powershell -ExecutionPolicy Bypass -File scripts/build.ps1
 # 2) 跑 demo（窗口模式，脚本可选；无脚本/脚本失败自动回退内置 UI）
 bin\log_explorer.exe examples\log-explorer\ui.rb
 
-# 3) 无人值守门禁（G1–G6，JSON 输出，exit code = 全过 ? 0 : 1）
-bin\log_explorer.exe --demo-gates --json
+# 3) 无人值守门禁（G1–G6+G8，JSON 输出，exit code = 全过 ? 0 : 1）
+bin\log_explorer.exe --demo-gates --json "--baseline=docs/baseline/gates-baseline.json"
 
 # 4) headless 冒烟 / 测试
 bin\log_explorer.exe --frames=60

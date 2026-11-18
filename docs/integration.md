@@ -1,6 +1,6 @@
 # 接入指南：给 Tessell 应用加 mruby 脚本层
 
-- 适用版本：tessell_mruby 0.1.0（兼容矩阵见 [COMPATIBILITY.md](COMPATIBILITY.md)）
+- 适用版本：tessell_mruby 0.2.0（兼容矩阵见 [COMPATIBILITY.md](COMPATIBILITY.md)；API 已正式冻结）
 - 前提：已读过 [api-freeze.md](api-freeze.md)（API 面）与 [design.md](design.md) §3（线程契约）
 - 参考实现：`examples/log-explorer/host_app.cr`（本指南的每一步都能在那里对上号）
 
@@ -25,7 +25,7 @@ dependencies:
     version: "~> 0.2"      # 固定 minor；升级需重跑门禁（见 COMPATIBILITY.md）
   tessell_mruby:
     github: ShiningRay/tessell-mruby
-    version: "~> 0.1"
+    version: "~> 0.2"
 ```
 
 构建前置：需要 mruby 静态库。`shards install` 后在 `lib/mrb` 内执行其 `make`
