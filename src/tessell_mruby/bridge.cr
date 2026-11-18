@@ -36,6 +36,89 @@ module TessellMRuby
       def handle(*args, &blk);         Tessell.handle(*args, &blk); end
     RUBY
 
+    # T2.4 布局参数 glue：规范名（row/column/node/begin_*）定义为可选参数的
+    # Ruby def，转发到 __ 前缀宿主方法。约定：
+    # - `Tessell.row "k", 4.0, 8`（位置参数）或 `Tessell.row "k", gap: 4,
+    #   padding: 8`（kwargs 经 mruby 3.x+ 的 Hash 落点进 gap 形参，此处拆开）。
+    # - padding：单个数字 = 四边；或 [left, top, right, bottom] 四元素数组。
+    # - gap/padding 必须非负数字，否则 [tessell-type] TypeError。
+    # - 不传参时补默认值（gap 0 / padding 全 0），产出与 0.1.0 逐位一致。
+    BRIDGE_GLUE = <<-RUBY
+      module Tessell
+        def self.__norm_layout(gap, padding)
+          if gap.is_a?(Hash)
+            padding = gap[:padding] unless gap[:padding].nil?
+            gap = gap[:gap]
+          end
+          unless gap.nil? || gap.is_a?(Integer) || gap.is_a?(Float)
+            raise ArgumentError, "[tessell-type] gap must be a number (Integer/Float), or use gap:/padding: keywords"
+          end
+          if gap.is_a?(Integer) || gap.is_a?(Float)
+            raise ArgumentError, "[tessell-type] gap must be >= 0" if gap < 0
+          end
+          [gap.nil? ? 0 : gap, padding]
+        end
+
+        def self.__pad4(p)
+          return [0, 0, 0, 0] if p.nil?
+          if p.is_a?(Array)
+            raise ArgumentError, "[tessell-type] padding must be 4 numbers [left, top, right, bottom]" unless p.size == 4
+            i = 0
+            while i < 4
+              v = p[i]
+              unless v.is_a?(Integer) || v.is_a?(Float)
+                raise ArgumentError, "[tessell-type] padding values must be numbers (Integer/Float)"
+              end
+              raise ArgumentError, "[tessell-type] padding values must be >= 0" if v < 0
+              i += 1
+            end
+            return p
+          end
+          unless p.is_a?(Integer) || p.is_a?(Float)
+            raise ArgumentError, "[tessell-type] padding must be a number or a 4-number array [left, top, right, bottom]"
+          end
+          raise ArgumentError, "[tessell-type] padding values must be >= 0" if p < 0
+          [p, p, p, p]
+        end
+
+        def self.row(key, gap = nil, padding = nil, &blk)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __row(key, gap, l, t, r, b, &blk)
+        end
+
+        def self.column(key, gap = nil, padding = nil, &blk)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __column(key, gap, l, t, r, b, &blk)
+        end
+
+        def self.node(key, gap = nil, padding = nil, &blk)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __node(key, gap, l, t, r, b, &blk)
+        end
+
+        def self.begin_row(key, gap = nil, padding = nil)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __begin_row(key, gap, l, t, r, b)
+        end
+
+        def self.begin_column(key, gap = nil, padding = nil)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __begin_column(key, gap, l, t, r, b)
+        end
+
+        def self.begin_node(key, gap = nil, padding = nil)
+          gap, padding = __norm_layout(gap, padding)
+          l, t, r, b = __pad4(padding)
+          __begin_node(key, gap, l, t, r, b)
+        end
+      end
+    RUBY
+
     def self.install(runtime : Runtime) : Nil
       new(runtime).install
     end
@@ -52,21 +135,27 @@ module TessellMRuby
       reg = ->(name : String, arity : Int32, blk : Proc(MRuby::Args, MRuby::CallbackValue)) {
         @state.define_module_function("Tessell", name, arity) { |args| blk.call(args) }
       }
+      # T2.4：容器宿主方法带布局参数（key, gap, pad_l, pad_t, pad_r, pad_b，
+      # arity 6），内部名加 __ 前缀；规范名（row/column/node/begin_*）由
+      # BRIDGE_GLUE 定义为可选参数的 Ruby def 转发——shim 按 MRB_ARGS_REQ
+      # 固定 arity 派发，C 层无法收可选参数，默认值在 glue 侧补齐（不传参
+      # 时产出与 0.1.0 逐位一致的 Decl）。
       reg.call("window", 3, ->(a : MRuby::Args) : MRuby::CallbackValue { window(a) })
       reg.call("text", 2, ->(a : MRuby::Args) : MRuby::CallbackValue { text(a) })
-      reg.call("row", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { row(a) })
-      reg.call("column", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { column(a) })
-      reg.call("node", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { node(a) })
+      reg.call("__row", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { container_layout(a, Tessell::UI::DeclKind::Row, Tessell::Layout::Direction::Horizontal, "row") })
+      reg.call("__column", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { container_layout(a, Tessell::UI::DeclKind::Column, Tessell::Layout::Direction::Vertical, "column") })
+      reg.call("__node", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { container_layout(a, Tessell::UI::DeclKind::Node, Tessell::Layout::Direction::Vertical, "node") })
       reg.call("button", 2, ->(a : MRuby::Args) : MRuby::CallbackValue { button(a) })
-      reg.call("begin_row", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_row(a) })
-      reg.call("begin_column", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_column(a) })
-      reg.call("begin_node", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_node(a) })
+      reg.call("__begin_row", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_container_layout(a, Tessell::UI::DeclKind::Row, Tessell::Layout::Direction::Horizontal) })
+      reg.call("__begin_column", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_container_layout(a, Tessell::UI::DeclKind::Column, Tessell::Layout::Direction::Vertical) })
+      reg.call("__begin_node", 6, ->(a : MRuby::Args) : MRuby::CallbackValue { begin_container_layout(a, Tessell::UI::DeclKind::Node, Tessell::Layout::Direction::Vertical) })
       reg.call("end_node", 0, ->(a : MRuby::Args) : MRuby::CallbackValue { end_node(a) })
       reg.call("on_click", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { on_click(a) })
       reg.call("set_text", 2, ->(a : MRuby::Args) : MRuby::CallbackValue { set_text(a) })
       reg.call("invalidate", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { invalidate(a) })
       reg.call("invalidate_all", 0, ->(a : MRuby::Args) : MRuby::CallbackValue { invalidate_all(a) })
       reg.call("handle", 1, ->(a : MRuby::Args) : MRuby::CallbackValue { handle(a) })
+      @state.eval(BRIDGE_GLUE)
     end
 
     # ---- 参数与上下文守卫 ----
@@ -150,27 +239,33 @@ module TessellMRuby
       nil
     end
 
-    private def row(args : MRuby::Args) : MRuby::CallbackValue
-      container(args, Tessell::UI::DeclKind::Row, Tessell::Layout::Direction::Horizontal, "row")
+    # 数字参数（gap：Integer/Float → Float64；其余 TypeError）。
+    private def num_arg(args : MRuby::Args, i : Int32) : Float64
+      v = args[i]
+      type_error(i, "Number (Integer/Float)", v) unless v.float? || v.integer?
+      v.float? ? v.as_f64 : v.as_i64.to_f64
     end
 
-    private def column(args : MRuby::Args) : MRuby::CallbackValue
-      container(args, Tessell::UI::DeclKind::Column, Tessell::Layout::Direction::Vertical, "column")
+    # glue 传参序 (key, gap, l, t, r, b) → Insets.new(top, right, bottom, left)。
+    private def insets_arg(args : MRuby::Args) : Tessell::Insets
+      l = int_arg(args, 2)
+      t = int_arg(args, 3)
+      r = int_arg(args, 4)
+      b = int_arg(args, 5)
+      Tessell::Insets.new(t.to_f32, r.to_f32, b.to_f32, l.to_f32)
     end
 
-    private def node(args : MRuby::Args) : MRuby::CallbackValue
-      container(args, Tessell::UI::DeclKind::Node, Tessell::Layout::Direction::Vertical, "node")
-    end
-
-    private def container(args : MRuby::Args, kind : Tessell::UI::DeclKind,
-                          dir : Tessell::Layout::Direction, name : String) : MRuby::CallbackValue
+    private def container_layout(args : MRuby::Args, kind : Tessell::UI::DeclKind,
+                                 dir : Tessell::Layout::Direction, name : String) : MRuby::CallbackValue
       key = str_arg(args, 0)
+      gap = num_arg(args, 1)
+      padding = insets_arg(args)
       if @rt.static_mode?
         require_loading(name)
         raise ArgumentError.new("Tessell.#{name} without a block is not supported in static mode; use Tessell.begin_#{name}/Tessell.end_node")
       end
       require_phase(name)
-      @decls.push_container(key, kind, dir)
+      @decls.push_container(key, kind, dir, gap: gap, padding: padding)
       begin
         @state.yield(require_block(args, name))
       ensure
@@ -210,24 +305,14 @@ module TessellMRuby
 
     # ---- 静态降级形态 ----
 
-    private def begin_row(args : MRuby::Args) : MRuby::CallbackValue
-      begin_container(args, Tessell::UI::DeclKind::Row, Tessell::Layout::Direction::Horizontal)
-    end
-
-    private def begin_column(args : MRuby::Args) : MRuby::CallbackValue
-      begin_container(args, Tessell::UI::DeclKind::Column, Tessell::Layout::Direction::Vertical)
-    end
-
-    private def begin_node(args : MRuby::Args) : MRuby::CallbackValue
-      begin_container(args, Tessell::UI::DeclKind::Node, Tessell::Layout::Direction::Vertical)
-    end
-
-    private def begin_container(args : MRuby::Args, kind : Tessell::UI::DeclKind,
-                                dir : Tessell::Layout::Direction) : MRuby::CallbackValue
+    private def begin_container_layout(args : MRuby::Args, kind : Tessell::UI::DeclKind,
+                                       dir : Tessell::Layout::Direction) : MRuby::CallbackValue
       @rt.enter_static_mode
       key = str_arg(args, 0)
+      gap = num_arg(args, 1)
+      padding = insets_arg(args)
       require_loading("begin_*")
-      @decls.push_container(key, kind, dir)
+      @decls.push_container(key, kind, dir, gap: gap, padding: padding)
       nil
     end
 

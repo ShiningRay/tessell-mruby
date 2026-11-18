@@ -120,9 +120,11 @@ module TessellMRuby
                      auto : Bool = true,
                      a11y_role : Tessell::A11y::Role = Tessell::A11y::Role::Group,
                      a11y_name : String = "",
-                     a11y_focusable : Bool = false) : Nil
+                     a11y_focusable : Bool = false,
+                     gap : Float32 = 0.0_f32,
+                     padding : Tessell::Insets = Tessell::Insets.new) : Nil
       buf_for_phase << Tessell::UI::Decl.new(key, current_parent, kind, text,
-        Tessell::Rect.new, dir, 0_u32, auto, Tessell::Insets.new, 0.0_f32,
+        Tessell::Rect.new, dir, 0_u32, auto, padding, gap,
         DEFAULT_TEXT_SIZE, a11y_role, a11y_name, "", a11y_focusable, true)
     end
 
@@ -133,14 +135,17 @@ module TessellMRuby
     end
 
     # 容器（row/column/node）：先发射再压栈，yield 回调期间子节点以它为 parent。
+    # gap/padding（T2.4）：可选布局参数，默认与 0.1.0 一致（0 / 全 0 Insets）。
     def push_container(script_key : String, kind : Tessell::UI::DeclKind,
                        dir : Tessell::Layout::Direction,
                        a11y_role : Tessell::A11y::Role = Tessell::A11y::Role::Group,
                        a11y_name : String = "",
-                       a11y_focusable : Bool = false) : Tessell::UI::UiKey
+                       a11y_focusable : Bool = false,
+                       gap : Float64 = 0.0,
+                       padding : Tessell::Insets = Tessell::Insets.new) : Tessell::UI::UiKey
       key = derive_key(script_key)
       check_dup(key, script_key)
-      emit(key, kind, "", dir, true, a11y_role, a11y_name, a11y_focusable)
+      emit(key, kind, "", dir, true, a11y_role, a11y_name, a11y_focusable, gap.to_f32, padding)
       @stack << key
       key
     end
